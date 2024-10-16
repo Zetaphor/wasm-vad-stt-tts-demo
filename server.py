@@ -46,12 +46,37 @@ def transcribe():
             temperature=0.0
         )
 
-        end_time = time.time()
-        transcription_time = end_time - start_time
+        transcription_end_time = time.time()
+        transcription_time = transcription_end_time - start_time
+
+        # Send transcribed text to LLM
+        llm_start_time = time.time()
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant. Respond to the user's input concisely."
+                },
+                {
+                    "role": "user",
+                    "content": transcription.text
+                }
+            ],
+            model="mixtral-8x7b-32768",
+            temperature=0.5,
+            max_tokens=1024,
+            top_p=1,
+            stream=False,
+            stop=None
+        )
+        llm_end_time = time.time()
+        llm_time = llm_end_time - llm_start_time
 
         return jsonify({
-            'text': transcription.text,
-            'transcription_time': transcription_time
+            'transcription': transcription.text,
+            'transcription_time': transcription_time,
+            'llm_response': chat_completion.choices[0].message.content,
+            'llm_time': llm_time
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -15,7 +15,12 @@ async function sendAudioToGroq(audioBlob) {
   const apiKey = document.getElementById('api_key').value;
   if (!apiKey) {
     alert('Please enter your Groq API key');
-    return { text: 'No API key provided', transcription_time: 0 };
+    return {
+      transcription: 'No API key provided',
+      transcription_time: 0,
+      llm_response: 'No API key provided',
+      llm_time: 0
+    };
   }
   formData.append('api_key', apiKey);
 
@@ -33,7 +38,12 @@ async function sendAudioToGroq(audioBlob) {
     return result;
   } catch (error) {
     console.error('Error sending audio to Groq:', error);
-    return { text: 'Error transcribing audio', transcription_time: 0 };
+    return {
+      transcription: 'Error transcribing audio',
+      transcription_time: 0,
+      llm_response: 'Error processing with LLM',
+      llm_time: 0
+    };
   }
 }
 
@@ -123,14 +133,24 @@ function displayTranscription(result) {
   const transcriptionItem = document.createElement("div");
 
   const textElement = document.createElement("p");
-  textElement.textContent = result.text;
+  textElement.textContent = `Transcription: ${result.transcription}`;
 
   const timeElement = document.createElement("small");
   timeElement.textContent = `Transcription time: ${result.transcription_time.toFixed(2)} seconds`;
   timeElement.style.color = "gray";
 
+  const llmResponseElement = document.createElement("p");
+  llmResponseElement.textContent = `LLM Response: ${result.llm_response}`;
+  llmResponseElement.style.fontStyle = "italic";
+
+  const llmTimeElement = document.createElement("small");
+  llmTimeElement.textContent = `LLM processing time: ${result.llm_time.toFixed(2)} seconds`;
+  llmTimeElement.style.color = "gray";
+
   transcriptionItem.appendChild(textElement);
   transcriptionItem.appendChild(timeElement);
+  transcriptionItem.appendChild(llmResponseElement);
+  transcriptionItem.appendChild(llmTimeElement);
 
   transcriptionDiv.prepend(transcriptionItem);
 }

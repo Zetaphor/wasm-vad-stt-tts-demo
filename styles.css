@@ -23,9 +23,9 @@
 }
 
 #transcription div {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  padding-bottom: 15px;
 }
 
 #transcription p {
@@ -36,4 +36,10 @@
   display: block;
   font-size: 0.8em;
   color: #666;
+  margin-bottom: 10px;
+}
+
+#transcription p:nth-child(3) {
+  margin-top: 10px;
+  color: #444;
 }
