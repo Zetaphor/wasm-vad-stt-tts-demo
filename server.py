@@ -1,20 +1,60 @@
-import http.server
-import ssl
+from flask import Flask, request, jsonify, send_from_directory
+from groq import Groq
+import os
+import time
 
-def run_server():
-    server_address = ('localhost', 4443)
-    handler = http.server.SimpleHTTPRequestHandler
+app = Flask(__name__, static_url_path='')
 
-    # Create an SSL context
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain('cert.pem', 'key.pem')
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
 
-    # Create the HTTPS server
-    httpd = http.server.HTTPServer(server_address, handler)
-    httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
+@app.route('/styles.css')
+def serve_css():
+    return send_from_directory('.', 'styles.css')
 
-    print(f"Serving HTTPS on {server_address[0]} port {server_address[1]} (https://{server_address[0]}:{server_address[1]}/) ...")
-    httpd.serve_forever()
+@app.route('/script.js')
+def serve_js():
+    return send_from_directory('.', 'script.js', mimetype='application/javascript')
+
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    model = request.form.get('model', 'whisper-large-v3-turbo')
+    language = request.form.get('language', 'en')
+    api_key = request.form.get('api_key')
+
+    if not api_key:
+        return jsonify({'error': 'No API key provided'}), 400
+
+    # Initialize the Groq client with the provided API key
+    client = Groq(api_key=api_key)
+
+    try:
+        # Measure transcription time
+        start_time = time.time()
+
+        # Create a transcription of the audio file
+        transcription = client.audio.transcriptions.create(
+            file=('audio.wav', file.read()),
+            model=model,
+            language=language,
+            response_format="json",
+            temperature=0.0
+        )
+
+        end_time = time.time()
+        transcription_time = end_time - start_time
+
+        return jsonify({
+            'text': transcription.text,
+            'transcription_time': transcription_time
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    run_server()
+    app.run(debug=True, ssl_context=('server.crt', 'server.key'), host='0.0.0.0', port=5000)

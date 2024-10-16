@@ -1,0 +1,39 @@
+.status-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.status-inactive {
+  background-color: gray;
+}
+
+.status-active {
+  background-color: yellow;
+}
+
+.status-capturing {
+  background-color: green;
+}
+
+.status-misfire {
+  background-color: red;
+}
+
+#transcription div {
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+#transcription p {
+  margin-bottom: 5px;
+}
+
+#transcription small {
+  display: block;
+  font-size: 0.8em;
+  color: #666;
+}
