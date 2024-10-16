@@ -23,7 +23,8 @@ def transcribe():
         return jsonify({'error': 'No file part'}), 400
 
     file = request.files['file']
-    model = request.form.get('model', 'whisper-large-v3-turbo')
+    whisper_model = request.form.get('whisper_model', 'whisper-large-v3-turbo')
+    llm_model = request.form.get('llm_model', 'mixtral-8x7b-32768')
     language = request.form.get('language', 'en')
     api_key = request.form.get('api_key')
 
@@ -40,7 +41,7 @@ def transcribe():
         # Create a transcription of the audio file
         transcription = client.audio.transcriptions.create(
             file=('audio.wav', file.read()),
-            model=model,
+            model=whisper_model,
             language=language,
             response_format="json",
             temperature=0.0
@@ -62,7 +63,7 @@ def transcribe():
                     "content": transcription.text
                 }
             ],
-            model="mixtral-8x7b-32768",
+            model=llm_model,
             temperature=0.5,
             max_tokens=1024,
             top_p=1,

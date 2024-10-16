@@ -31,6 +31,35 @@
         <input type="password" id="api_key" placeholder="Enter your Groq API key"
           value="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" autocomplete="off" data-lpignore="true">
       </div>
+      <a href="https://console.groq.com/settings/limits" target="_blank">Groq Rate Limits</a>
+      <div class="model-selection">
+        <label for="whisper_model">Whisper Model:</label>
+        <select id="whisper_model">
+          <option value="whisper-large-v3">Whisper Large V3</option>
+          <option value="whisper-large-v3-turbo">Whisper Large V3 Turbo</option>
+          <option selected value="distil-whisper-large-v3-en">Distilled Whisper Large V3</option>
+        </select>
+      </div>
+      <div class="model-selection">
+        <label for="llm_model">LLM Model:</label>
+        <select id="llm_model">
+          <option value="gemma-7b-it">Gemma 7B IT</option>
+          <option value="gemma2-9b-it">Gemma2 9B IT</option>
+          <option value="llama-3.1-70b-versatile">LLaMA 3.1 70B Versatile</option>
+          <option value="llama-3.1-8b-instant">LLaMA 3.1 8B Instant</option>
+          <option value="llama-3.2-11b-text-preview">LLaMA 3.2 11B Text (Preview)</option>
+          <option value="llama-3.2-1b-preview">LLaMA 3.2 1B (Preview)</option>
+          <option value="llama-3.2-3b-preview">LLaMA 3.2 3B (Preview)</option>
+          <option value="llama-3.2-90b-text-preview">LLaMA 3.2 90B Text (Preview)</option>
+          <option value="llama-guard-3-8b">LLaMA Guard 3 8B</option>
+          <option value="llama3-70b-8192">LLaMA3 70B 8192</option>
+          <option value="llama3-8b-8192">LLaMA3 8B 8192</option>
+          <option value="llama3-groq-70b-8192-tool-use-preview">LLaMA3 Groq 70B 8192 Tool Use (Preview)</option>
+          <option value="llama3-groq-8b-8192-tool-use-preview">LLaMA3 Groq 8B 8192 Tool Use (Preview)</option>
+          <option value="llava-v1.5-7b-4096-preview">LLaVA v1.5 7B 4096 (Preview)</option>
+          <option value="mixtral-8x7b-32768" selected>Mixtral 8x7B 32768</option>
+        </select>
+      </div>
       <h2>Transcriptions</h2>
       <div id="transcription"></div>
       <h2>Recorded Audio</h2>

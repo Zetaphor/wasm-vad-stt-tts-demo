@@ -9,7 +9,8 @@ const loading = setInterval(() => {
 async function sendAudioToGroq(audioBlob) {
   const formData = new FormData();
   formData.append('file', audioBlob, 'audio.wav');
-  formData.append('model', 'whisper-large-v3-turbo');
+  formData.append('whisper_model', document.getElementById('whisper_model').value);
+  formData.append('llm_model', document.getElementById('llm_model').value);
   formData.append('language', 'en');
 
   const apiKey = document.getElementById('api_key').value;
