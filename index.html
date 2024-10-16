@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VAD</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.13/dist/bundle.min.js"></script>
+  <script type="module">
+    import { interpolateInferno } from "https://cdn.skypack.dev/d3-scale-chromatic@3"
+
+    const loading = setInterval(() => {
+      const indicator = document.getElementById("indicator")
+      const [message, ...dots] = indicator.innerHTML.split(".")
+      indicator.innerHTML = message + ".".repeat((dots.length + 1) % 7)
+    }, 200)
+
+    try {
+      const myvad = await vad.MicVAD.new({
+        positiveSpeechThreshold: 0.8,
+        minSpeechFrames: 5,
+        preSpeechPadFrames: 10,
+        onFrameProcessed: (probs) => {
+          const indicatorColor = interpolateInferno(probs.isSpeech / 2)
+          document.body.style.setProperty("--indicator-color", indicatorColor)
+        },
+        onSpeechEnd: (arr) => {
+          const wavBuffer = vad.utils.encodeWAV(arr)
+          const base64 = vad.utils.arrayBufferToBase64(wavBuffer)
+          const url = `data:audio/wav;base64,${base64}`
+          const el = addAudio(url)
+          const speechList = document.getElementById("playlist")
+          speechList.prepend(el)
+        },
+      })
+      window.myvad = myvad
+
+      clearInterval(loading)
+      window.toggleVAD = () => {
+        console.log("ran toggle vad")
+        if (myvad.listening === false) {
+          myvad.start()
+          document.getElementById("toggle_vad_button").textContent =
+            "STOP VAD"
+          document.getElementById("indicator").textContent = "VAD is running"
+        } else {
+          myvad.pause()
+          document.getElementById("toggle_vad_button").textContent =
+            "START VAD"
+          document.getElementById(
+            "indicator"
+          ).innerHTML = `VAD is <span style="color:red">stopped</span>`
+          const indicatorColor = interpolateInferno(0)
+          document.body.style.setProperty("--indicator-color", indicatorColor)
+        }
+      }
+      window.toggleVAD()
+      document.getElementById("toggle_vad_button").disabled = false
+    } catch (e) {
+      console.error("Failed:", e)
+      clearInterval(loading)
+      document.getElementById(
+        "indicator"
+      ).innerHTML = `<span style="color:red">VAD failed to load</span>`
+    }
+
+    function addAudio(audioUrl) {
+      const entry = document.createElement("li")
+      const audio = document.createElement("audio")
+      audio.controls = true
+      audio.src = audioUrl
+      entry.classList.add("newItem")
+      entry.appendChild(audio)
+      return entry
+    }
+  </script>
+</head>
+
+<body>
+  <div class="content-container">
+    <div class="content">
+      <h1>Voice Activity Detector</h1>
+      <div class="control-row">
+        <div id="indicator">
+          VAD is <span style="color: red">LOADING</span>
+        </div>
+        <button id="toggle_vad_button" onclick="window.toggleVAD()" disabled>
+          START VAD
+        </button>
+      </div>
+      <ol id="playlist" reversed></ol>
+    </div>
+  </div>
+</body>
+
+</html>
