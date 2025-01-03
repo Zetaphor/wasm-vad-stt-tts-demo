@@ -1,5 +1,5 @@
-import { createPiperPhonemize } from "./piper.js";
-import * as ort from "./onyx-runtimeweb.js";
+import { createPiperPhonemize } from "./standalone/piper.js";
+import * as ort from "./standalone/onyx-runtimeweb.js";
 
 const HF_BASE =
   "https://huggingface.co/diffusionstudio/piper-voices/resolve/main";
