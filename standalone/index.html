@@ -3,14 +3,14 @@
 
 <head>
   <style>
-    body *:not(script) {
+    .container {
       display: block;
       position: relative;
       width: 250px;
       margin: 0px;
       padding: 0px;
       left: calc(50vw - 125px);
-      top: 20vh;
+      /* top: 20vh; */
     }
 
     button {
@@ -42,16 +42,27 @@
     .error {
       color: #cc0000;
     }
+
+    p {
+      margin: 0;
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
-  <audio controls autoplay></audio>
-  <select></select>
-  <textarea></textarea>
-  <button>Generate Speech</button>
-  <div id="status"></div>
+  <div class="container">
+    <audio controls autoplay></audio>
+    <select></select>
+    <textarea></textarea>
+    <button>Generate Speech</button>
+    <div id="status"></div>
+  </div>
   <script type="module" src="./index.js"></script>
+  <div>
+    <p>You can find more voices at <a
+        href="https://rhasspy.github.io/piper-samples/">https://rhasspy.github.io/piper-samples/</a></p>
+  </div>
 </body>
 
 </html>
