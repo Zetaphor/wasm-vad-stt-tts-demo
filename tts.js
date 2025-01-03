@@ -1,5 +1,5 @@
-import { createPiperPhonemize } from "./piper.js";
-import * as ort from "./onyx-runtimeweb.js";
+import { createPiperPhonemize } from "./piper/piper.js";
+import * as ort from "./piper/onyx-runtimeweb.js";
 
 const ONNX_BASE = "piper/";
 const WASM_BASE = "piper/piper_phonemize";
@@ -114,66 +114,4 @@ async function predict(config) {
   });
 }
 
-const text = "Text to speech in the browser is amazing!";
-const select = document.querySelector("select");
-const audio = document.querySelector("audio");
-const textarea = document.querySelector("textarea");
-const button = document.querySelector("button");
-const status = document.querySelector("#status");
-
-textarea.placeholder = text;
-const entries = Object.entries(PATH_MAP);
-
-for (let i = 0; i < entries.length + 1; i++) {
-  if (i === 0) {
-    select[i] = new Option("Choose a voice for Text-To-Speech:", "", true, true);
-    continue;
-  }
-  const [key] = entries[i - 1];
-  select[i] = new Option(key);
-}
-
-let blobURL;
-
-function setStatus(message, type = '') {
-  status.textContent = message;
-  status.className = type;
-}
-
-async function generateSpeech() {
-  const value = select.value.trim();
-  if (!value) {
-    setStatus('Please select a voice first', 'error');
-    return;
-  }
-
-  try {
-    button.disabled = true;
-    select.disabled = true;
-    setStatus('Generating speech...', 'loading');
-
-    const startTime = performance.now();
-    const wav = await predict({
-      text: textarea.value.trim() || text,
-      voiceId: value,
-    });
-    const duration = ((performance.now() - startTime) / 1000).toFixed(1);
-
-    if (blobURL?.length) {
-      URL.revokeObjectURL(blobURL);
-    }
-    blobURL = URL.createObjectURL(wav);
-    audio.src = blobURL;
-
-    setStatus(`Speech generated in ${duration}s`, 'success');
-  } catch (error) {
-    console.error('Speech generation failed:', error);
-    setStatus('Failed to generate speech. Please try again.', 'error');
-  } finally {
-    button.disabled = false;
-    select.disabled = false;
-  }
-}
-
-button.addEventListener("click", generateSpeech);
-select.addEventListener("change", generateSpeech);
+export { PATH_MAP, predict };

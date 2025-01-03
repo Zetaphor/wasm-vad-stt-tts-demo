@@ -28,6 +28,18 @@
           START VAD
         </button>
       </div>
+      <div class="tts-container">
+        <h2>Text-to-Speech</h2>
+        <div class="tts-controls">
+          <audio id="tts-audio" controls></audio>
+          <select id="voice-select"></select>
+          <textarea id="tts-text" placeholder="Enter text to synthesize"></textarea>
+          <button id="generate-speech">Generate Speech</button>
+          <div id="tts-status"></div>
+        </div>
+        <p class="tts-info">You can find more voices at <a
+            href="https://rhasspy.github.io/piper-samples/">https://rhasspy.github.io/piper-samples/</a></p>
+      </div>
       <h2>Recorded Audio</h2>
       <ol id="playlist" reversed></ol>
     </div>

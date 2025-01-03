@@ -1,3 +1,5 @@
+import './tts-ui.js';
+
 /**
  * Configuration for the Voice Activity Detection
  */
