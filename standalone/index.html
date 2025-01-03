@@ -1,24 +1,57 @@
 <!doctype html>
 <html>
-  <head>
-    <style>
-      body *:not(script) {
-        display: block;
-        position: relative;
-        width: 250px;
-        margin: 0px;
-        padding: 0px;
-        left: calc(50vw - 125px);
-        top: 20vh;
-      }
-    </style>
-  </head>
-  <body>
-    <audio controls autoplay></audio>
-    <select></select>
-    <textarea></textarea>
-    <button>Save generated WAV file</button>
-    <a target="_blank" href="https://github.com/guest271314/vits-web/tree/patch-1/docs">Source code on GitHub</a>
-    <script type="module" src="./index.js"></script>
-  </body>
+
+<head>
+  <style>
+    body *:not(script) {
+      display: block;
+      position: relative;
+      width: 250px;
+      margin: 0px;
+      padding: 0px;
+      left: calc(50vw - 125px);
+      top: 20vh;
+    }
+
+    button {
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    #status {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      min-height: 20px;
+    }
+
+    .loading {
+      color: #0066cc;
+    }
+
+    .success {
+      color: #00aa00;
+    }
+
+    .error {
+      color: #cc0000;
+    }
+  </style>
+</head>
+
+<body>
+  <audio controls autoplay></audio>
+  <select></select>
+  <textarea></textarea>
+  <button>Generate Speech</button>
+  <div id="status"></div>
+  <script type="module" src="./index.js"></script>
+</body>
+
 </html>
