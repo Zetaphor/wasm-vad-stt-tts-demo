@@ -1,9 +1,15 @@
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  margin: 0 10px;
+}
+
 .status-indicator {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   display: inline-block;
-  margin-right: 10px;
+  margin-right: 5px;
 }
 
 .status-inactive {
@@ -22,24 +28,8 @@
   background-color: red;
 }
 
-#transcription div {
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 15px;
-}
-
-#transcription p {
-  margin-bottom: 5px;
-}
-
-#transcription small {
-  display: block;
-  font-size: 0.8em;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-#transcription p:nth-child(3) {
-  margin-top: 10px;
-  color: #444;
+#text-status {
+  display: inline-block;
+  font-weight: bold;
+  min-width: 150px;
 }
