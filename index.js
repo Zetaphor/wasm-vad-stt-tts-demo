@@ -1,4 +1,5 @@
-import './tts-ui.js';
+import './piper-ui.js';
+import { initializeMoonshine, transcribeAudio, convertAudioToFloat32 } from './moonshine-integration.js';
 
 /**
  * Configuration for the Voice Activity Detection
@@ -69,17 +70,24 @@ function updateStatusIndicator(speechProbability) {
 }
 
 /**
- * Creates and adds an audio element to the playlist
+ * Creates and adds an audio element with transcription to the playlist
  * @param {string} audioUrl - Base64 encoded WAV audio URL
+ * @param {string} transcription - The transcribed text
  * @returns {HTMLElement} The created list item element
  */
-function addAudio(audioUrl) {
+function addAudioWithTranscription(audioUrl, transcription) {
   const entry = document.createElement("li");
   const audio = document.createElement("audio");
   audio.controls = true;
   audio.src = audioUrl;
+
+  const transcriptionDiv = document.createElement("div");
+  transcriptionDiv.classList.add("transcription");
+  transcriptionDiv.textContent = transcription || "Transcription pending...";
+
   entry.classList.add("newItem");
   entry.appendChild(audio);
+  entry.appendChild(transcriptionDiv);
   return entry;
 }
 
@@ -96,6 +104,9 @@ async function initializeVAD() {
       throw new Error('getUserMedia is not supported in this browser');
     }
 
+    // Initialize Moonshine first
+    await initializeMoonshine();
+
     vadInstance = await vad.MicVAD.new({
       ...VAD_CONFIG,
       onFrameProcessed: (probs) => updateStatusIndicator(probs.isSpeech),
@@ -103,8 +114,25 @@ async function initializeVAD() {
         const wavBuffer = vad.utils.encodeWAV(audio);
         const base64 = vad.utils.arrayBufferToBase64(wavBuffer);
         const url = `data:audio/wav;base64,${base64}`;
-        const el = addAudio(url);
+
+        // Create a blob from the audio data for transcription
+        const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+        const el = addAudioWithTranscription(url, null);
         UI.playlist.prepend(el);
+
+        try {
+          // Convert and transcribe the audio
+          const floatArray = await convertAudioToFloat32(audioBlob);
+          const transcription = await transcribeAudio(floatArray);
+
+          // Update the transcription in the UI
+          const transcriptionDiv = el.querySelector('.transcription');
+          transcriptionDiv.textContent = transcription;
+        } catch (error) {
+          console.error('Failed to transcribe audio:', error);
+          const transcriptionDiv = el.querySelector('.transcription');
+          transcriptionDiv.textContent = 'Transcription failed';
+        }
       }
     });
 
@@ -112,9 +140,9 @@ async function initializeVAD() {
     setupVADToggle();
     window.toggleVAD(); // Start VAD automatically
   } catch (error) {
-    console.error("VAD Initialization failed:", error);
+    console.error("Initialization failed:", error);
     clearInterval(loading);
-    UI.indicator.innerHTML = `<span style="color:red">VAD failed to load: ${error.message}</span>`;
+    UI.indicator.innerHTML = `<span style="color:red">Initialization failed: ${error.message}</span>`;
   }
 }
 
