@@ -1,7 +1,135 @@
+/* Layout */
+.content-container {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  padding: 20px;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Settings Panel */
+.settings-panel {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.settings-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.setting-group {
+  margin-bottom: 12px;
+}
+
+.setting-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #666;
+}
+
+.setting-group input[type="text"],
+.setting-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.setting-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Chat Container */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.chat-controls {
+  padding: 20px;
+  border-top: 1px solid #eee;
+}
+
+/* Message Bubbles */
+.message {
+  margin-bottom: 20px;
+  max-width: 80%;
+}
+
+.message.user {
+  margin-left: auto;
+}
+
+.message.assistant {
+  margin-right: auto;
+}
+
+.message-content {
+  padding: 12px 16px;
+  border-radius: 12px;
+  position: relative;
+}
+
+.message.user .message-content {
+  background: #007bff;
+  color: white;
+}
+
+.message.assistant .message-content {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.message-meta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Voice Status */
+#voice-indicator {
+  text-align: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+#voice-status {
+  font-weight: bold;
+  color: #666;
+}
+
+/* Status Indicator */
 .status-wrapper {
   display: flex;
   align-items: center;
-  margin: 0 10px;
+  margin-bottom: 10px;
 }
 
 .status-indicator {
@@ -34,64 +162,39 @@
   min-width: 150px;
 }
 
-/* TTS Styles */
-.tts-container {
-  margin: 20px 0;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.tts-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-#tts-audio {
-  width: 100%;
-}
-
-#voice-select {
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-#tts-text {
-  min-height: 100px;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  resize: vertical;
-}
-
-#generate-speech {
-  padding: 10px;
-  background-color: #007bff;
+/* Controls and Inputs */
+button {
+  padding: 8px 16px;
+  background: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
 }
 
-#generate-speech:disabled {
-  background-color: #ccc;
+button:disabled {
+  background: #ccc;
   cursor: not-allowed;
 }
 
-#tts-status {
-  text-align: center;
-  min-height: 20px;
+select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  width: 100%;
 }
 
-.tts-info {
-  margin-top: 15px;
-  text-align: center;
-  font-size: 14px;
-  color: #666;
+/* Audio Player */
+audio {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Utility Classes */
+.hidden {
+  display: none;
 }
 
 .loading {
@@ -106,55 +209,26 @@
   color: #cc0000;
 }
 
-.transcription {
-  margin-top: 8px;
-  padding: 8px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #333;
-}
-
-.newItem {
-  margin-bottom: 16px;
-  padding: 12px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.model-selector {
+.api-key-wrapper {
   display: flex;
-  align-items: center;
   gap: 8px;
-  margin: 0 10px;
+  align-items: center;
 }
 
-.model-selector label {
-  font-size: 14px;
+.api-key-wrapper input[type="password"],
+.api-key-wrapper input[type="text"] {
+  flex: 1;
+}
+
+#toggle-api-key {
+  padding: 4px 8px;
+  background: #f0f0f0;
   color: #666;
-}
-
-.model-selector select {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background-color: white;
+  border: 1px solid #ddd;
+  cursor: pointer;
   font-size: 14px;
 }
 
-.model-selector select:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-}
-
-.transcription-text {
-  margin-bottom: 4px;
-  font-size: 16px;
-}
-
-.timing-info {
-  font-size: 12px;
-  color: #666;
-  font-style: italic;
+#toggle-api-key:hover {
+  background: #e0e0e0;
 }

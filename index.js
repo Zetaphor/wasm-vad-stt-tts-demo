@@ -1,53 +1,180 @@
-import './piper-ui.js';
 import { initializeMoonshine, transcribeAudio, convertAudioToFloat32, getCurrentModel } from './moonshine-integration.js';
-
-/**
- * Configuration for the Voice Activity Detection
- */
-const VAD_CONFIG = {
-  positiveSpeechThreshold: 0.8,
-  minSpeechFrames: 5,
-  preSpeechPadFrames: 10
-};
+import { initializeLLM, getChatCompletion, createChatMessage, extractResponseText } from './llm-integration.js';
+import { predict, PATH_MAP } from './piper-integration.js';
 
 /**
  * UI Elements
  */
 const UI = {
-  indicator: document.getElementById("indicator"),
+  // Status and Control
   statusIndicator: document.getElementById("status-indicator"),
   toggleButton: document.getElementById("toggle_vad_button"),
-  playlist: document.getElementById("playlist"),
   textStatus: document.getElementById("text-status"),
-  modelSelect: document.getElementById("moonshine-model")
+  voiceStatus: document.getElementById("voice-status"),
+
+  // Chat
+  chatMessages: document.getElementById("chat-messages"),
+
+  // Settings
+  modelSelect: document.getElementById("moonshine-model"),
+  voiceSelect: document.getElementById("voice-select"),
+  llmEndpoint: document.getElementById("llm-endpoint"),
+  llmModel: document.getElementById("llm-model"),
+  llmApiKey: document.getElementById("llm-api-key"),
+  toggleApiKey: document.getElementById("toggle-api-key"),
+  llmTemperature: document.getElementById("llm-temperature"),
+  temperatureValue: document.getElementById("temperature-value"),
+  systemPrompt: document.getElementById("system-prompt")
 };
 
 let vadInstance = null;
 let misfireTimeout;
+let conversationHistory = [];
 
-// Loading animation interval
-const loading = setInterval(() => {
-  const [message, ...dots] = UI.indicator.innerHTML.split(".");
-  UI.indicator.innerHTML = message + ".".repeat((dots.length + 1) % 7);
-}, 200);
+/**
+ * Initialize voice select dropdown with available voices
+ */
+function initializeVoiceSelect() {
+  // Clear existing options
+  UI.voiceSelect.innerHTML = '';
 
-function getIndicatorColor(probability) {
-  if (probability > 0.8) return '#ff0000'; // Red for high probability
-  if (probability > 0.5) return '#ffa500'; // Orange for medium probability
-  return '#00ff00'; // Green for low probability
+  // Add voice options
+  Object.keys(PATH_MAP).forEach((voiceId, index) => {
+    const option = new Option(voiceId, voiceId);
+    UI.voiceSelect.add(option);
+    if (index === 0) {
+      option.selected = true;
+    }
+  });
 }
 
 /**
- * Updates the UI status indicator based on speech probability
- * @param {number} speechProbability - Probability of speech detection (0-1)
+ * Initialize all components
+ */
+async function initialize() {
+  try {
+    // Initialize voice select
+    initializeVoiceSelect();
+
+    // Initialize LLM
+    initializeLLM({
+      baseUrl: UI.llmEndpoint.value,
+      model: UI.llmModel.value,
+      temperature: parseFloat(UI.llmTemperature.value)
+    });
+
+    // Initialize Moonshine
+    const initialModel = UI.modelSelect.value;
+    await initializeMoonshine(initialModel);
+
+    // Initialize VAD
+    vadInstance = await vad.MicVAD.new({
+      positiveSpeechThreshold: 0.8,
+      minSpeechFrames: 5,
+      preSpeechPadFrames: 10,
+      onFrameProcessed: (probs) => updateStatusIndicator(probs.isSpeech),
+      onSpeechEnd: handleSpeechEnd
+    });
+
+    setupEventListeners();
+    UI.toggleButton.disabled = false;
+    UI.voiceStatus.textContent = "Ready to start";
+  } catch (error) {
+    console.error("Initialization failed:", error);
+    UI.voiceStatus.textContent = `Initialization failed: ${error.message}`;
+  }
+}
+
+/**
+ * Set up event listeners for UI controls
+ */
+function setupEventListeners() {
+  // VAD toggle
+  window.toggleVAD = () => {
+    if (!vadInstance.listening) {
+      vadInstance.start();
+      UI.toggleButton.textContent = "STOP VAD";
+      UI.voiceStatus.textContent = "Listening...";
+      UI.statusIndicator.className = "status-indicator status-active";
+      UI.textStatus.textContent = "Listening";
+    } else {
+      vadInstance.pause();
+      UI.toggleButton.textContent = "START VAD";
+      UI.voiceStatus.textContent = "Paused";
+      UI.statusIndicator.className = "status-indicator status-inactive";
+      UI.textStatus.textContent = "Stopped";
+    }
+  };
+
+  // Settings changes
+  UI.modelSelect.addEventListener('change', async () => {
+    const newModel = UI.modelSelect.value;
+    if (newModel === getCurrentModel()) return;
+
+    UI.modelSelect.disabled = true;
+    UI.toggleButton.disabled = true;
+    const wasListening = vadInstance?.listening;
+    if (wasListening) vadInstance.pause();
+
+    try {
+      UI.voiceStatus.textContent = `Loading ${newModel} model...`;
+      await initializeMoonshine(newModel);
+      UI.voiceStatus.textContent = `${newModel} model loaded`;
+      if (wasListening) vadInstance.start();
+    } catch (error) {
+      console.error('Failed to switch model:', error);
+      UI.voiceStatus.textContent = `Failed to load ${newModel} model`;
+    } finally {
+      UI.modelSelect.disabled = false;
+      UI.toggleButton.disabled = false;
+    }
+  });
+
+  // LLM settings
+  UI.llmEndpoint.addEventListener('change', updateLLMConfig);
+  UI.llmModel.addEventListener('change', updateLLMConfig);
+  UI.llmApiKey.addEventListener('change', updateLLMConfig);
+  UI.llmTemperature.addEventListener('input', () => {
+    UI.temperatureValue.textContent = UI.llmTemperature.value;
+    updateLLMConfig();
+  });
+
+  // API key visibility toggle
+  UI.toggleApiKey.addEventListener('click', () => {
+    const isPassword = UI.llmApiKey.type === 'password';
+    UI.llmApiKey.type = isPassword ? 'text' : 'password';
+    UI.toggleApiKey.textContent = isPassword ? '🔒' : '👁️';
+  });
+}
+
+/**
+ * Update LLM configuration when settings change
+ */
+function updateLLMConfig() {
+  const config = {
+    baseUrl: UI.llmEndpoint.value,
+    model: UI.llmModel.value,
+    temperature: parseFloat(UI.llmTemperature.value)
+  };
+
+  // Only add Authorization header if API key is provided
+  if (UI.llmApiKey.value.trim()) {
+    config.headers = {
+      'Authorization': `Bearer ${UI.llmApiKey.value.trim()}`
+    };
+  }
+
+  initializeLLM(config);
+}
+
+/**
+ * Update the UI status indicator based on speech probability
  */
 function updateStatusIndicator(speechProbability) {
-  const indicatorColor = getIndicatorColor(speechProbability);
-  document.body.style.setProperty("--indicator-color", indicatorColor);
-
   if (speechProbability > 0.8) {
     UI.statusIndicator.className = "status-indicator status-capturing";
     UI.textStatus.textContent = "Speech detected";
+    UI.voiceStatus.textContent = "Speaking detected...";
     clearTimeout(misfireTimeout);
     misfireTimeout = setTimeout(() => {
       UI.statusIndicator.className = "status-indicator status-misfire";
@@ -59,9 +186,6 @@ function updateStatusIndicator(speechProbability) {
         }
       }, 1000);
     }, 1000);
-  } else if (speechProbability > 0.5) {
-    UI.statusIndicator.className = "status-indicator status-active";
-    UI.textStatus.textContent = "Potential speech detected";
   } else {
     if (UI.statusIndicator.className !== "status-indicator status-misfire") {
       UI.statusIndicator.className = "status-indicator status-active";
@@ -71,169 +195,122 @@ function updateStatusIndicator(speechProbability) {
 }
 
 /**
- * Creates and adds an audio element with transcription to the playlist
- * @param {string} audioUrl - Base64 encoded WAV audio URL
- * @param {Object} transcriptionInfo - The transcription information
- * @param {string} transcriptionInfo.text - The transcribed text
- * @param {number} transcriptionInfo.duration - The transcription duration in ms
- * @returns {HTMLElement} The created list item element
+ * Add a message to the chat interface
  */
-function addAudioWithTranscription(audioUrl, transcriptionInfo) {
-  const entry = document.createElement("li");
-  const audio = document.createElement("audio");
-  audio.controls = true;
-  audio.src = audioUrl;
+function addChatMessage(text, isUser = true, audioBlob = null, timingInfo = null) {
+  const message = document.createElement('div');
+  message.className = `message ${isUser ? 'user' : 'assistant'}`;
 
-  const transcriptionDiv = document.createElement("div");
-  transcriptionDiv.classList.add("transcription");
+  const content = document.createElement('div');
+  content.className = 'message-content';
+  content.textContent = text;
 
-  if (transcriptionInfo) {
-    const transcriptionText = document.createElement("div");
-    transcriptionText.classList.add("transcription-text");
-    transcriptionText.textContent = transcriptionInfo.text;
+  const meta = document.createElement('div');
+  meta.className = 'message-meta';
 
-    const timingInfo = document.createElement("div");
-    timingInfo.classList.add("timing-info");
-    timingInfo.textContent = `Transcribed in ${transcriptionInfo.duration}ms using ${getCurrentModel()} model`;
-
-    transcriptionDiv.appendChild(transcriptionText);
-    transcriptionDiv.appendChild(timingInfo);
-  } else {
-    transcriptionDiv.textContent = "Transcription pending...";
+  if (timingInfo) {
+    const timing = document.createElement('div');
+    timing.className = 'timing-info';
+    timing.textContent = timingInfo;
+    meta.appendChild(timing);
   }
 
-  entry.classList.add("newItem");
-  entry.appendChild(audio);
-  entry.appendChild(transcriptionDiv);
-  return entry;
+  if (audioBlob) {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = URL.createObjectURL(audioBlob);
+    if (!isUser) {
+      audio.autoplay = true;
+    }
+    meta.appendChild(audio);
+  }
+
+  message.appendChild(content);
+  message.appendChild(meta);
+  UI.chatMessages.appendChild(message);
+  UI.chatMessages.scrollTop = UI.chatMessages.scrollHeight;
+
+  return message;
 }
 
 /**
- * Handles model switching
+ * Handle speech end event from VAD
  */
-async function handleModelSwitch() {
-  const newModel = UI.modelSelect.value;
-  if (newModel === getCurrentModel()) return;
-
-  // Disable UI during model switch
-  UI.modelSelect.disabled = true;
-  UI.toggleButton.disabled = true;
-  const wasListening = vadInstance?.listening;
-  if (wasListening) {
-    vadInstance.pause();
-  }
-
+async function handleSpeechEnd(audio) {
   try {
-    UI.indicator.textContent = `Loading ${newModel} model...`;
-    await initializeMoonshine(newModel);
-    UI.indicator.textContent = `${newModel} model loaded successfully`;
+    UI.voiceStatus.textContent = "Processing speech...";
 
-    // Resume VAD if it was active
-    if (wasListening) {
-      vadInstance.start();
+    // Convert audio to text
+    const transcriptionStart = performance.now();
+    const audioBlob = new Blob([vad.utils.encodeWAV(audio)], { type: 'audio/wav' });
+    const floatArray = await convertAudioToFloat32(audioBlob);
+    const transcription = await transcribeAudio(floatArray);
+    const transcriptionTime = Math.round(performance.now() - transcriptionStart);
+
+    // Add user message to chat
+    addChatMessage(
+      transcription.text,
+      true,
+      audioBlob,
+      `Transcribed in ${transcriptionTime}ms using ${getCurrentModel()} model`
+    );
+
+    // Update conversation history
+    conversationHistory.push(createChatMessage('user', transcription.text));
+
+    // Get LLM response
+    UI.voiceStatus.textContent = "Getting AI response...";
+    const llmStart = performance.now();
+
+    // Ensure proper message format for the API
+    const messages = [
+      createChatMessage('system', UI.systemPrompt.value),
+      ...conversationHistory
+    ];
+
+    console.log('Sending messages to LLM:', messages); // Debug log
+
+    try {
+      const response = await getChatCompletion(messages);
+      const responseText = extractResponseText(response);
+      const llmTime = Math.round(performance.now() - llmStart);
+      conversationHistory.push(createChatMessage('assistant', responseText));
+
+      // Convert response to speech
+      UI.voiceStatus.textContent = "Generating speech...";
+      const ttsStart = performance.now();
+      const speechBlob = await predict({
+        text: responseText,
+        voiceId: UI.voiceSelect.value
+      });
+      const ttsTime = Math.round(performance.now() - ttsStart);
+
+      // Add assistant message to chat
+      addChatMessage(
+        responseText,
+        false,
+        speechBlob,
+        `LLM response: ${llmTime}ms, TTS generation: ${ttsTime}ms using ${UI.voiceSelect.value} voice`
+      );
+
+      UI.voiceStatus.textContent = "Listening...";
+    } catch (error) {
+      console.error('LLM or TTS processing failed:', error);
+      UI.voiceStatus.textContent = "Error: " + error.message;
+
+      // Add error message to chat
+      addChatMessage(
+        "Sorry, I encountered an error while processing your request: " + error.message,
+        false,
+        null,
+        "Error occurred during processing"
+      );
     }
   } catch (error) {
-    console.error('Failed to switch model:', error);
-    UI.indicator.innerHTML = `<span style="color:red">Failed to load ${newModel} model: ${error.message}</span>`;
-  } finally {
-    UI.modelSelect.disabled = false;
-    UI.toggleButton.disabled = false;
+    console.error('Processing failed:', error);
+    UI.voiceStatus.textContent = "Error processing speech";
   }
 }
 
-/**
- * Initializes the Voice Activity Detection system
- */
-async function initializeVAD() {
-  try {
-    // Check for secure context and media devices support
-    if (!window.isSecureContext) {
-      throw new Error('Application must be run in a secure context (HTTPS or localhost)');
-    }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('getUserMedia is not supported in this browser');
-    }
-
-    // Initialize Moonshine first
-    const initialModel = UI.modelSelect.value;
-    await initializeMoonshine(initialModel);
-
-    // Set up model switching handler
-    UI.modelSelect.addEventListener('change', handleModelSwitch);
-
-    vadInstance = await vad.MicVAD.new({
-      ...VAD_CONFIG,
-      onFrameProcessed: (probs) => updateStatusIndicator(probs.isSpeech),
-      onSpeechEnd: async (audio) => {
-        const wavBuffer = vad.utils.encodeWAV(audio);
-        const base64 = vad.utils.arrayBufferToBase64(wavBuffer);
-        const url = `data:audio/wav;base64,${base64}`;
-
-        // Create a blob from the audio data for transcription
-        const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
-        const el = addAudioWithTranscription(url, null);
-        UI.playlist.prepend(el);
-
-        try {
-          // Convert and transcribe the audio
-          const floatArray = await convertAudioToFloat32(audioBlob);
-          const result = await transcribeAudio(floatArray);
-
-          // Update the transcription in the UI
-          const transcriptionDiv = el.querySelector('.transcription');
-          transcriptionDiv.innerHTML = ''; // Clear the pending message
-
-          const transcriptionText = document.createElement("div");
-          transcriptionText.classList.add("transcription-text");
-          transcriptionText.textContent = result.text;
-
-          const timingInfo = document.createElement("div");
-          timingInfo.classList.add("timing-info");
-          timingInfo.textContent = `Transcribed in ${result.duration}ms using ${getCurrentModel()} model`;
-
-          transcriptionDiv.appendChild(transcriptionText);
-          transcriptionDiv.appendChild(timingInfo);
-        } catch (error) {
-          console.error('Failed to transcribe audio:', error);
-          const transcriptionDiv = el.querySelector('.transcription');
-          transcriptionDiv.textContent = 'Transcription failed';
-        }
-      }
-    });
-
-    clearInterval(loading);
-    setupVADToggle();
-    window.toggleVAD(); // Start VAD automatically
-  } catch (error) {
-    console.error("Initialization failed:", error);
-    clearInterval(loading);
-    UI.indicator.innerHTML = `<span style="color:red">Initialization failed: ${error.message}</span>`;
-  }
-}
-
-/**
- * Sets up the VAD toggle functionality
- */
-function setupVADToggle() {
-  window.toggleVAD = () => {
-    if (!vadInstance.listening) {
-      vadInstance.start();
-      UI.toggleButton.textContent = "STOP VAD";
-      UI.indicator.textContent = "VAD is running";
-      UI.statusIndicator.className = "status-indicator status-active";
-      UI.textStatus.textContent = "Listening";
-    } else {
-      vadInstance.pause();
-      UI.toggleButton.textContent = "START VAD";
-      UI.indicator.innerHTML = `VAD is <span style="color:red">stopped</span>`;
-      document.body.style.setProperty("--indicator-color", getIndicatorColor(0));
-      UI.statusIndicator.className = "status-indicator status-inactive";
-      UI.textStatus.textContent = "Stopped";
-    }
-  };
-
-  UI.toggleButton.disabled = false;
-}
-
-// Initialize VAD when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', initializeVAD);
+// Initialize when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', initialize);

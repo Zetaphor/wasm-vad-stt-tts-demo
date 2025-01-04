@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VAD Test</title>
+  <title>Voice Chat Interface</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="vad-web-0.0.13/ort.js"></script>
   <script src="vad-web-0.0.13/bundle.min.js"></script>
@@ -14,41 +14,74 @@
 
 <body>
   <div class="content-container">
-    <div class="content">
-      <h1>Voice Activity Detector</h1>
-      <div class="control-row">
-        <div id="indicator">
-          VAD is <span style="color: red">LOADING</span>
-        </div>
+    <div class="settings-panel">
+      <h2>Settings</h2>
+      <div class="settings-section">
+        <h3>Voice Activity Detection</h3>
         <div class="status-wrapper">
           <div id="status-indicator" class="status-indicator status-inactive"></div>
           <div id="text-status">Initializing...</div>
         </div>
+        <button id="toggle_vad_button" onclick="window.toggleVAD()" disabled>START VAD</button>
+      </div>
+
+      <div class="settings-section">
+        <h3>Speech Recognition</h3>
         <div class="model-selector">
-          <label for="moonshine-model">Transcription Model:</label>
+          <label for="moonshine-model">Model:</label>
           <select id="moonshine-model">
             <option value="tiny">Moonshine Tiny</option>
             <option value="base">Moonshine Base</option>
           </select>
         </div>
-        <button id="toggle_vad_button" onclick="window.toggleVAD()" disabled>
-          START VAD
-        </button>
       </div>
-      <div class="tts-container">
-        <h2>Text-to-Speech</h2>
-        <div class="tts-controls">
-          <audio id="tts-audio" controls></audio>
-          <select id="voice-select"></select>
-          <textarea id="tts-text" placeholder="Enter text to synthesize"></textarea>
-          <button id="generate-speech">Generate Speech</button>
-          <div id="tts-status"></div>
+
+      <div class="settings-section">
+        <h3>LLM Configuration</h3>
+        <div class="llm-settings">
+          <div class="setting-group">
+            <label for="llm-endpoint">API Endpoint:</label>
+            <input type="text" id="llm-endpoint" value="http://localhost:8000/v1" />
+          </div>
+          <div class="setting-group">
+            <label for="llm-model">Model Name:</label>
+            <input type="text" id="llm-model" value="local-model" />
+          </div>
+          <div class="setting-group">
+            <label for="llm-api-key">API Key:</label>
+            <div class="api-key-wrapper">
+              <input type="password" id="llm-api-key" placeholder="Enter API key if required" />
+              <button id="toggle-api-key" type="button" title="Toggle API key visibility">👁️</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label for="llm-temperature">Temperature:</label>
+            <input type="range" id="llm-temperature" min="0" max="1" step="0.1" value="0.7" />
+            <span id="temperature-value">0.7</span>
+          </div>
+          <div class="setting-group">
+            <label for="system-prompt">System Prompt:</label>
+            <textarea id="system-prompt">You are a helpful AI assistant.</textarea>
+          </div>
         </div>
-        <p class="tts-info">You can find more voices at <a
-            href="https://rhasspy.github.io/piper-samples/">https://rhasspy.github.io/piper-samples/</a></p>
       </div>
-      <h2>Recorded Audio</h2>
-      <ol id="playlist" reversed></ol>
+
+      <div class="settings-section">
+        <h3>Text-to-Speech</h3>
+        <div class="tts-settings">
+          <label for="voice-select">Voice:</label>
+          <select id="voice-select"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-container">
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-controls">
+        <div id="voice-indicator">
+          <div id="voice-status">Click START VAD to begin</div>
+        </div>
+      </div>
     </div>
   </div>
 </body>
