@@ -1,5 +1,18 @@
 /**
+ * @module llm-integration
+ * @description Integration module for Large Language Model (LLM) API interactions.
+ * Provides functionality for making chat completion and text completion requests
+ * to a local or remote LLM server using an OpenAI-compatible API format.
+ */
+
+/**
  * Configuration for the LLM API
+ * @typedef {Object} LLMConfig
+ * @property {string} baseUrl - Base URL for the API endpoint
+ * @property {string} model - Name of the model to use
+ * @property {number} temperature - Controls randomness in the output (0-1)
+ * @property {number} max_tokens - Maximum number of tokens to generate
+ * @property {Object} headers - HTTP headers for API requests
  */
 const LLM_CONFIG = {
   baseUrl: 'http://localhost:8000/v1', // Default local endpoint, can be changed
@@ -13,10 +26,8 @@ const LLM_CONFIG = {
 
 /**
  * Initializes the LLM configuration
- * @param {Object} config - Configuration object
- * @param {string} config.baseUrl - Base URL for the API
- * @param {string} config.model - Model name to use
- * @param {Object} config.headers - Additional headers (e.g., for authentication)
+ * @param {Partial<LLMConfig>} config - Partial configuration object to merge with defaults
+ * @throws {Error} If the configuration is invalid
  */
 export function initializeLLM(config = {}) {
   Object.assign(LLM_CONFIG, config);
@@ -24,9 +35,12 @@ export function initializeLLM(config = {}) {
 
 /**
  * Sends a chat completion request to the local LLM
- * @param {Array} messages - Array of message objects in OpenAI chat format
+ * @param {Array<{role: string, content: string}>} messages - Array of message objects in OpenAI chat format
  * @param {Object} options - Additional options for the request
- * @returns {Promise<Object>} - The LLM response
+ * @param {number} [options.temperature] - Override default temperature
+ * @param {number} [options.max_tokens] - Override default max_tokens
+ * @returns {Promise<Object>} The LLM response in OpenAI format
+ * @throws {Error} If the API request fails
  */
 export async function getChatCompletion(messages, options = {}) {
   try {
@@ -62,7 +76,10 @@ export async function getChatCompletion(messages, options = {}) {
  * Sends a completion request to the local LLM
  * @param {string} prompt - The text prompt
  * @param {Object} options - Additional options for the request
- * @returns {Promise<Object>} - The LLM response
+ * @param {number} [options.temperature] - Override default temperature
+ * @param {number} [options.max_tokens] - Override default max_tokens
+ * @returns {Promise<Object>} The LLM response in OpenAI format
+ * @throws {Error} If the API request fails
  */
 export async function getCompletion(prompt, options = {}) {
   try {
@@ -93,7 +110,10 @@ export async function getCompletion(prompt, options = {}) {
 /**
  * Helper function to extract the main response text from an LLM completion
  * @param {Object} completion - The completion response from the LLM
- * @returns {string} - The main response text
+ * @param {Array} completion.choices - Array of completion choices
+ * @param {Object|string} completion.choices[0].message - Message object for chat completions
+ * @param {string} [completion.choices[0].text] - Text for regular completions
+ * @returns {string} The main response text
  */
 export function extractResponseText(completion) {
   if (completion.choices && completion.choices.length > 0) {
@@ -107,9 +127,9 @@ export function extractResponseText(completion) {
 
 /**
  * Creates a simple chat message object
- * @param {string} role - The role (system, user, or assistant)
+ * @param {'system'|'user'|'assistant'} role - The role of the message sender
  * @param {string} content - The message content
- * @returns {Object} - A formatted message object
+ * @returns {{role: string, content: string}} A formatted message object
  */
 export function createChatMessage(role, content) {
   return { role, content };

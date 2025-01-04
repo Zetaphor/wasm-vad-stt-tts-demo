@@ -1,3 +1,10 @@
+/**
+ * @module moonshine-integration
+ * @description Integration module for the Moonshine speech recognition system.
+ * Provides functionality for initializing the model, transcribing audio,
+ * and converting audio formats for processing.
+ */
+
 import Moonshine from './moonshine/moonshine-web.js';
 
 let moonshineInstance = null;
@@ -68,6 +75,9 @@ export async function transcribeAudio(audioData) {
  * Convert audio blob to Float32Array for Moonshine processing
  * @param {Blob} audioBlob - The audio blob to convert
  * @returns {Promise<Float32Array>} The converted audio data
+ * @description Creates an AudioContext with a 16kHz sample rate (required by Moonshine),
+ * decodes the audio blob, and returns a Float32Array of the audio data.
+ * Audio longer than 30 seconds will be truncated.
  */
 export async function convertAudioToFloat32(audioBlob) {
   const audioCTX = new AudioContext({ sampleRate: 16000 });

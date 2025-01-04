@@ -1,3 +1,27 @@
+/* Dark Theme Variables */
+:root {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #383838;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --accent-primary: #0088ff;
+  --accent-hover: #1a94ff;
+  --accent-danger: #dc3545;
+  --accent-danger-hover: #bb2d3b;
+  --border-color: #404040;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 /* Layout */
 .content-container {
   display: grid;
@@ -10,7 +34,7 @@
 
 /* Settings Panel */
 .settings-panel {
-  background: #f5f5f5;
+  background: var(--bg-secondary);
   padding: 20px;
   border-radius: 8px;
   overflow-y: auto;
@@ -20,15 +44,15 @@
 .settings-section {
   margin-bottom: 20px;
   padding: 15px;
-  background: white;
+  background: var(--bg-tertiary);
   border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .settings-section h3 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .setting-group {
@@ -38,15 +62,18 @@
 .setting-group label {
   display: block;
   margin-bottom: 5px;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .setting-group input[type="text"],
+.setting-group input[type="password"],
 .setting-group textarea {
   width: 100%;
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
@@ -60,9 +87,9 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .chat-messages {
@@ -73,7 +100,10 @@
 
 .chat-controls {
   padding: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 /* Message Bubbles */
@@ -97,18 +127,18 @@
 }
 
 .message.user .message-content {
-  background: #007bff;
+  background: var(--accent-primary);
   color: white;
 }
 
 .message.assistant .message-content {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .message-meta {
   font-size: 12px;
-  color: #666;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
@@ -116,13 +146,13 @@
 #voice-indicator {
   text-align: center;
   padding: 10px;
-  background: #f8f9fa;
+  background: var(--bg-tertiary);
   border-radius: 4px;
 }
 
 #voice-status {
   font-weight: bold;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 /* Status Indicator */
@@ -141,31 +171,32 @@
 }
 
 .status-inactive {
-  background-color: gray;
+  background-color: #666;
 }
 
 .status-active {
-  background-color: yellow;
+  background-color: #ffd700;
 }
 
 .status-capturing {
-  background-color: green;
+  background-color: #00ff00;
 }
 
 .status-misfire {
-  background-color: red;
+  background-color: var(--accent-danger);
 }
 
 #text-status {
   display: inline-block;
   font-weight: bold;
   min-width: 150px;
+  color: var(--text-primary);
 }
 
 /* Controls and Inputs */
 button {
   padding: 8px 16px;
-  background: #007bff;
+  background: var(--accent-primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -173,22 +204,26 @@ button {
   font-weight: bold;
 }
 
+button:hover {
+  background: var(--accent-hover);
+}
+
 button:disabled {
-  background: #ccc;
+  background: var(--bg-tertiary);
   cursor: not-allowed;
 }
 
 select {
   padding: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: white;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   width: 100%;
 }
 
 /* Audio Player */
 audio {
-  width: 100%;
   margin-top: 10px;
 }
 
@@ -198,15 +233,15 @@ audio {
 }
 
 .loading {
-  color: #0066cc;
+  color: var(--accent-primary);
 }
 
 .success {
-  color: #00aa00;
+  color: #00cc00;
 }
 
 .error {
-  color: #cc0000;
+  color: var(--accent-danger);
 }
 
 .api-key-wrapper {
@@ -222,13 +257,118 @@ audio {
 
 #toggle-api-key {
   padding: 4px 8px;
-  background: #f0f0f0;
-  color: #666;
-  border: 1px solid #ddd;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   font-size: 14px;
 }
 
 #toggle-api-key:hover {
-  background: #e0e0e0;
+  background: var(--bg-secondary);
+}
+
+.clear-button {
+  background-color: var(--accent-danger);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+.clear-button:hover {
+  background-color: var(--accent-danger-hover);
+}
+
+/* Info Button and Dialog Styles */
+.chat-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.info-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  padding: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  color: var(--text-secondary);
+}
+
+.info-button:hover {
+  transform: scale(1.1);
+  color: var(--text-primary);
+}
+
+.info-dialog {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 600px;
+  width: 90%;
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 6px var(--shadow-color);
+  color: var(--text-primary);
+}
+
+.info-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dialog-content {
+  padding: 24px;
+}
+
+.dialog-content h2 {
+  margin-top: 0;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 12px;
+}
+
+.info-section {
+  margin-bottom: 24px;
+}
+
+.info-section h3 {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.info-section p {
+  margin: 8px 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.info-section a {
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.info-section a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+#close-dialog {
+  display: block;
+  margin: 20px auto 0;
+  padding: 8px 24px;
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+}
+
+#close-dialog:hover {
+  background: var(--accent-hover);
 }

@@ -1,15 +1,35 @@
 import { createPiperPhonemize } from "./piper/piper.js";
 import * as ort from "./piper/onyx-runtimeweb.js";
 
+/**
+ * Base path for ONNX model files
+ * @constant {string}
+ */
 const ONNX_BASE = "piper/";
+
+/**
+ * Base path for WASM files
+ * @constant {string}
+ */
 const WASM_BASE = "piper/piper_phonemize";
 
+/**
+ * Map of voice IDs to their corresponding ONNX model files
+ * @constant {Object.<string, string>}
+ */
 const PATH_MAP = {
   "en_US-hfc_female-medium": "en_US-hfc_female-medium.onnx",
   "en_US-hfc_male-medium": "en_US-hfc_male-medium.onnx",
   "GLaDOS": "glados.onnx"
 };
 
+/**
+ * Converts PCM audio data to WAV format
+ * @param {Float32Array} buffer - The PCM audio buffer
+ * @param {number} numChannels - Number of audio channels
+ * @param {number} sampleRate - Audio sample rate in Hz
+ * @returns {ArrayBuffer} WAV formatted audio data
+ */
 function pcm2wav(buffer, numChannels, sampleRate) {
   const bufferLength = buffer.length;
   const view = new DataView(new ArrayBuffer(bufferLength * numChannels * 2 + 44));
@@ -37,12 +57,22 @@ function pcm2wav(buffer, numChannels, sampleRate) {
   return view.buffer;
 }
 
+/**
+ * Fetches a resource and returns it as a Blob
+ * @param {string} url - URL of the resource to fetch
+ * @returns {Promise<Blob>} The fetched resource as a Blob
+ */
 async function fetchBlob(url) {
   const request = await fetch(url);
   const type = request.headers.get("content-type") || 'application/octet-stream';
   return new Blob([await request.arrayBuffer()], { type });
 }
 
+/**
+ * Creates a blob URL for a given resource URL
+ * @param {string} url - URL of the resource
+ * @returns {Promise<{url: string, blob: Blob}>} Object containing the blob URL and blob
+ */
 async function createBlobUrl(url) {
   const blob = await fetchBlob(url);
   return {
@@ -51,6 +81,14 @@ async function createBlobUrl(url) {
   };
 }
 
+/**
+ * Generates speech from text using the Piper TTS model
+ * @param {Object} config - Configuration object
+ * @param {string} config.text - Text to convert to speech
+ * @param {string} config.voiceId - ID of the voice to use (must be a key in PATH_MAP)
+ * @returns {Promise<Blob>} WAV audio blob of the generated speech
+ * @throws {Error} If phonemization or inference fails
+ */
 async function predict(config) {
   const path = PATH_MAP[config.voiceId];
   const input = JSON.stringify([{ text: config.text.trim() }]);

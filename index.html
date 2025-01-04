@@ -5,7 +5,9 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice Chat Interface</title>
+  <meta name="darkreader-lock" />
+  <meta name="color-scheme" content="dark" />
+  <title>ChatGPT Voice At Home</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="vad-web-0.0.13/ort.js"></script>
   <script src="vad-web-0.0.13/bundle.min.js"></script>
@@ -81,9 +83,38 @@
         <div id="voice-indicator">
           <div id="voice-status">Click START VAD to begin</div>
         </div>
+        <div class="chat-buttons">
+          <button id="info-button" class="info-button" title="Project Information">ℹ️</button>
+          <button id="clear-chat" class="clear-button">Clear Chat</button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Project Information Dialog -->
+  <dialog id="info-dialog" class="info-dialog">
+    <div class="dialog-content">
+      <h2>About This Project</h2>
+      <div class="info-section">
+        <h3>Voice Activity Detection</h3>
+        <p>VAD is provided by the <a href="https://github.com/ricky0123/vad" target="_blank">vad-web library</a>.</p>
+      </div>
+      <div class="info-section">
+        <h3>Speech To Text</h3>
+        <p>Moonshine is provided by the <a href="https://github.com/usefulsensors/moonshine"
+            target="_blank">usefulsensors/moonshine library</a>.</p>
+      </div>
+      <div class="info-section">
+        <h3>Text To Speech</h3>
+        <p>The TTS voices are provided by the <a href="https://github.com/rhasspy/piper" target="_blank">rhasspy/piper
+            library</a>.</p>
+        <p>The TTS inference is provided by a fork of the <a href="https://github.com/diffusionstudio/vits-web"
+            target="_blank">diffusionstudio/vits-web library</a> by <a
+            href="https://github.com/guest271314/vits-web/tree/patch-1/docs" target="_blank">guest271314</a>.</p>
+      </div>
+      <button id="close-dialog">Close</button>
+    </div>
+  </dialog>
 </body>
 
 </html>

@@ -24,12 +24,26 @@ const UI = {
   toggleApiKey: document.getElementById("toggle-api-key"),
   llmTemperature: document.getElementById("llm-temperature"),
   temperatureValue: document.getElementById("temperature-value"),
-  systemPrompt: document.getElementById("system-prompt")
+  systemPrompt: document.getElementById("system-prompt"),
+  clearChat: document.getElementById("clear-chat"),
+
+  // Info Dialog
+  infoButton: document.getElementById("info-button"),
+  infoDialog: document.getElementById("info-dialog"),
+  closeDialog: document.getElementById("close-dialog")
 };
 
 let vadInstance = null;
 let misfireTimeout;
 let conversationHistory = [];
+
+/**
+ * Clear the chat messages and conversation history
+ */
+function clearChat() {
+  UI.chatMessages.innerHTML = '';
+  conversationHistory = [];
+}
 
 /**
  * Initialize voice select dropdown with available voices
@@ -145,6 +159,25 @@ function setupEventListeners() {
     UI.llmApiKey.type = isPassword ? 'text' : 'password';
     UI.toggleApiKey.textContent = isPassword ? '🔒' : '👁️';
   });
+
+  // Clear chat button
+  UI.clearChat.addEventListener('click', clearChat);
+
+  // Info dialog
+  UI.infoButton.addEventListener('click', () => {
+    UI.infoDialog.showModal();
+  });
+
+  UI.closeDialog.addEventListener('click', () => {
+    UI.infoDialog.close();
+  });
+
+  // Close dialog when clicking outside
+  UI.infoDialog.addEventListener('click', (e) => {
+    if (e.target === UI.infoDialog) {
+      UI.infoDialog.close();
+    }
+  });
 }
 
 /**
@@ -171,26 +204,22 @@ function updateLLMConfig() {
  * Update the UI status indicator based on speech probability
  */
 function updateStatusIndicator(speechProbability) {
+  const newStatus = speechProbability > 0.8
+    ? { class: "status-indicator status-capturing", text: "Speech detected", voice: "Speaking detected..." }
+    : { class: "status-indicator status-active", text: "Listening", voice: "Listening..." };
+
+  UI.statusIndicator.className = newStatus.class;
+  UI.textStatus.textContent = newStatus.text;
+  UI.voiceStatus.textContent = newStatus.voice;
+
   if (speechProbability > 0.8) {
-    UI.statusIndicator.className = "status-indicator status-capturing";
-    UI.textStatus.textContent = "Speech detected";
-    UI.voiceStatus.textContent = "Speaking detected...";
     clearTimeout(misfireTimeout);
     misfireTimeout = setTimeout(() => {
-      UI.statusIndicator.className = "status-indicator status-misfire";
-      UI.textStatus.textContent = "Possible misfire";
-      setTimeout(() => {
-        if (UI.statusIndicator.className !== "status-indicator status-misfire") {
-          UI.statusIndicator.className = "status-indicator status-active";
-          UI.textStatus.textContent = "Listening";
-        }
-      }, 1000);
+      if (vadInstance?.listening) {
+        UI.statusIndicator.className = "status-indicator status-active";
+        UI.textStatus.textContent = "Listening";
+      }
     }, 1000);
-  } else {
-    if (UI.statusIndicator.className !== "status-indicator status-misfire") {
-      UI.statusIndicator.className = "status-indicator status-active";
-      UI.textStatus.textContent = "Listening";
-    }
   }
 }
 
@@ -237,8 +266,12 @@ function addChatMessage(text, isUser = true, audioBlob = null, timingInfo = null
  * Handle speech end event from VAD
  */
 async function handleSpeechEnd(audio) {
+  const updateStatus = (status) => {
+    UI.voiceStatus.textContent = status;
+  };
+
   try {
-    UI.voiceStatus.textContent = "Processing speech...";
+    updateStatus("Processing speech...");
 
     // Convert audio to text
     const transcriptionStart = performance.now();
@@ -255,60 +288,49 @@ async function handleSpeechEnd(audio) {
       `Transcribed in ${transcriptionTime}ms using ${getCurrentModel()} model`
     );
 
-    // Update conversation history
+    // Update conversation history and get LLM response
     conversationHistory.push(createChatMessage('user', transcription.text));
+    updateStatus("Getting AI response...");
 
-    // Get LLM response
-    UI.voiceStatus.textContent = "Getting AI response...";
     const llmStart = performance.now();
-
-    // Ensure proper message format for the API
     const messages = [
       createChatMessage('system', UI.systemPrompt.value),
       ...conversationHistory
     ];
 
-    console.log('Sending messages to LLM:', messages); // Debug log
+    const response = await getChatCompletion(messages);
+    const responseText = extractResponseText(response);
+    const llmTime = Math.round(performance.now() - llmStart);
+    conversationHistory.push(createChatMessage('assistant', responseText));
 
-    try {
-      const response = await getChatCompletion(messages);
-      const responseText = extractResponseText(response);
-      const llmTime = Math.round(performance.now() - llmStart);
-      conversationHistory.push(createChatMessage('assistant', responseText));
+    // Generate speech response
+    updateStatus("Generating speech...");
+    const ttsStart = performance.now();
+    const speechBlob = await predict({
+      text: responseText,
+      voiceId: UI.voiceSelect.value
+    });
+    const ttsTime = Math.round(performance.now() - ttsStart);
 
-      // Convert response to speech
-      UI.voiceStatus.textContent = "Generating speech...";
-      const ttsStart = performance.now();
-      const speechBlob = await predict({
-        text: responseText,
-        voiceId: UI.voiceSelect.value
-      });
-      const ttsTime = Math.round(performance.now() - ttsStart);
+    // Add assistant message to chat
+    addChatMessage(
+      responseText,
+      false,
+      speechBlob,
+      `LLM response: ${llmTime}ms, TTS generation: ${ttsTime}ms using ${UI.voiceSelect.value} voice`
+    );
 
-      // Add assistant message to chat
-      addChatMessage(
-        responseText,
-        false,
-        speechBlob,
-        `LLM response: ${llmTime}ms, TTS generation: ${ttsTime}ms using ${UI.voiceSelect.value} voice`
-      );
-
-      UI.voiceStatus.textContent = "Listening...";
-    } catch (error) {
-      console.error('LLM or TTS processing failed:', error);
-      UI.voiceStatus.textContent = "Error: " + error.message;
-
-      // Add error message to chat
-      addChatMessage(
-        "Sorry, I encountered an error while processing your request: " + error.message,
-        false,
-        null,
-        "Error occurred during processing"
-      );
-    }
+    updateStatus("Listening...");
   } catch (error) {
     console.error('Processing failed:', error);
-    UI.voiceStatus.textContent = "Error processing speech";
+    updateStatus(`Error: ${error.message}`);
+
+    addChatMessage(
+      `Sorry, I encountered an error: ${error.message}`,
+      false,
+      null,
+      "Error occurred during processing"
+    );
   }
 }
 
