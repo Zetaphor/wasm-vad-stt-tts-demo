@@ -1,6 +1,2 @@
-# Large model files
-dist/models/base/uncached_decode.ort
-dist/models/tiny/uncached_decode.ort
-dist/models/base/cached_decode.ort
-dist/models/tiny/cached_decode.ort
-dist/models/base/encode.ort
+# Model files
+dist/models/**/*.ort
