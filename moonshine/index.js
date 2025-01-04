@@ -1,4 +1,4 @@
-import Moonshine from "./moonshine.js"
+import Moonshine from "./moonshine-web.js"
 
 
 function setTranscription(text) {
@@ -13,14 +13,14 @@ async function getRecordingDevice() {
 
 async function startRecording(mediaRecorder) {
     const audioChunks = [];
-  
+
     mediaRecorder.ondataavailable = event => {
         audioChunks.push(event.data);
     };
-  
+
     mediaRecorder.start();
     console.log("Recording started");
-  
+
     return new Promise(resolve => {
         mediaRecorder.onstop = () => {
             const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
@@ -60,7 +60,7 @@ window.onload = (event) => {
         toggleControls(true)
     });
 
-    models.onchange = async function(e) {
+    models.onchange = async function (e) {
         var selection = document.getElementById("models").value
         if (selection != model_name) {
             toggleControls(false)
@@ -74,12 +74,12 @@ window.onload = (event) => {
         }
     }
 
-    upload.onchange = function(e) {
+    upload.onchange = function (e) {
         setAudio(this.files[0])
         toggleAudioPanel(true)
     }
 
-    transcribe.onclick = async function(e) {
+    transcribe.onclick = async function (e) {
         var sound = document.getElementById("sound")
         if (sound.src) {
             toggleControls(false)
@@ -103,7 +103,7 @@ window.onload = (event) => {
     }
 
     var mediaRecorder = undefined
-    startRecord.onclick = async function(e) {
+    startRecord.onclick = async function (e) {
         document.getElementById("startRecord").style = "display: none;"
         document.getElementById("stopRecord").style = "display: block;"
 
@@ -119,7 +119,7 @@ window.onload = (event) => {
             toggleAudioPanel(true)
         });
     }
-    stopRecord.onclick = function(e) {
+    stopRecord.onclick = function (e) {
         document.getElementById("startRecord").style = "display: block;"
         document.getElementById("stopRecord").style = "display: none;"
         mediaRecorder.stop()

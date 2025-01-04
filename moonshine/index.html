@@ -7,7 +7,9 @@
   <link rel="stylesheet" href="/index.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Moonshine – lightweight ASR by Useful Sensors</title>
-  <script type="module" crossorigin src="/moonshine.js"></script>
+  <!-- You can use either the IIFE version (standalone) -->
+  <!-- <script src="/moonshine.iife.js"></script> -->
+  <!-- Or the ES module version (recommended) -->
 </head>
 
 <body>
@@ -32,8 +34,8 @@
       </div>
       <div class="justify-center">
         <select name="models" id="models">
-          <option value="tiny" selected>models/tiny</option>
-          <option value="base">models/base</option>
+          <option value="tiny" selected>moonshine/tiny</option>
+          <option value="base">moonshine/base</option>
         </select>
         <input type="file" id="upload" style="display: none;" />
         <button id="browse" onclick="document.getElementById('upload').click();">Browse</button>
@@ -53,6 +55,7 @@
       </div>
     </div>
   </div>
+  <script type="module" src="index.js"></script>
 </body>
 
 </html>
