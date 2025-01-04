@@ -1,5 +1,5 @@
 import './piper-ui.js';
-import { initializeMoonshine, transcribeAudio, convertAudioToFloat32 } from './moonshine-integration.js';
+import { initializeMoonshine, transcribeAudio, convertAudioToFloat32, getCurrentModel } from './moonshine-integration.js';
 
 /**
  * Configuration for the Voice Activity Detection
@@ -18,7 +18,8 @@ const UI = {
   statusIndicator: document.getElementById("status-indicator"),
   toggleButton: document.getElementById("toggle_vad_button"),
   playlist: document.getElementById("playlist"),
-  textStatus: document.getElementById("text-status")
+  textStatus: document.getElementById("text-status"),
+  modelSelect: document.getElementById("moonshine-model")
 };
 
 let vadInstance = null;
@@ -72,10 +73,12 @@ function updateStatusIndicator(speechProbability) {
 /**
  * Creates and adds an audio element with transcription to the playlist
  * @param {string} audioUrl - Base64 encoded WAV audio URL
- * @param {string} transcription - The transcribed text
+ * @param {Object} transcriptionInfo - The transcription information
+ * @param {string} transcriptionInfo.text - The transcribed text
+ * @param {number} transcriptionInfo.duration - The transcription duration in ms
  * @returns {HTMLElement} The created list item element
  */
-function addAudioWithTranscription(audioUrl, transcription) {
+function addAudioWithTranscription(audioUrl, transcriptionInfo) {
   const entry = document.createElement("li");
   const audio = document.createElement("audio");
   audio.controls = true;
@@ -83,12 +86,59 @@ function addAudioWithTranscription(audioUrl, transcription) {
 
   const transcriptionDiv = document.createElement("div");
   transcriptionDiv.classList.add("transcription");
-  transcriptionDiv.textContent = transcription || "Transcription pending...";
+
+  if (transcriptionInfo) {
+    const transcriptionText = document.createElement("div");
+    transcriptionText.classList.add("transcription-text");
+    transcriptionText.textContent = transcriptionInfo.text;
+
+    const timingInfo = document.createElement("div");
+    timingInfo.classList.add("timing-info");
+    timingInfo.textContent = `Transcribed in ${transcriptionInfo.duration}ms using ${getCurrentModel()} model`;
+
+    transcriptionDiv.appendChild(transcriptionText);
+    transcriptionDiv.appendChild(timingInfo);
+  } else {
+    transcriptionDiv.textContent = "Transcription pending...";
+  }
 
   entry.classList.add("newItem");
   entry.appendChild(audio);
   entry.appendChild(transcriptionDiv);
   return entry;
+}
+
+/**
+ * Handles model switching
+ */
+async function handleModelSwitch() {
+  const newModel = UI.modelSelect.value;
+  if (newModel === getCurrentModel()) return;
+
+  // Disable UI during model switch
+  UI.modelSelect.disabled = true;
+  UI.toggleButton.disabled = true;
+  const wasListening = vadInstance?.listening;
+  if (wasListening) {
+    vadInstance.pause();
+  }
+
+  try {
+    UI.indicator.textContent = `Loading ${newModel} model...`;
+    await initializeMoonshine(newModel);
+    UI.indicator.textContent = `${newModel} model loaded successfully`;
+
+    // Resume VAD if it was active
+    if (wasListening) {
+      vadInstance.start();
+    }
+  } catch (error) {
+    console.error('Failed to switch model:', error);
+    UI.indicator.innerHTML = `<span style="color:red">Failed to load ${newModel} model: ${error.message}</span>`;
+  } finally {
+    UI.modelSelect.disabled = false;
+    UI.toggleButton.disabled = false;
+  }
 }
 
 /**
@@ -105,7 +155,11 @@ async function initializeVAD() {
     }
 
     // Initialize Moonshine first
-    await initializeMoonshine();
+    const initialModel = UI.modelSelect.value;
+    await initializeMoonshine(initialModel);
+
+    // Set up model switching handler
+    UI.modelSelect.addEventListener('change', handleModelSwitch);
 
     vadInstance = await vad.MicVAD.new({
       ...VAD_CONFIG,
@@ -123,11 +177,22 @@ async function initializeVAD() {
         try {
           // Convert and transcribe the audio
           const floatArray = await convertAudioToFloat32(audioBlob);
-          const transcription = await transcribeAudio(floatArray);
+          const result = await transcribeAudio(floatArray);
 
           // Update the transcription in the UI
           const transcriptionDiv = el.querySelector('.transcription');
-          transcriptionDiv.textContent = transcription;
+          transcriptionDiv.innerHTML = ''; // Clear the pending message
+
+          const transcriptionText = document.createElement("div");
+          transcriptionText.classList.add("transcription-text");
+          transcriptionText.textContent = result.text;
+
+          const timingInfo = document.createElement("div");
+          timingInfo.classList.add("timing-info");
+          timingInfo.textContent = `Transcribed in ${result.duration}ms using ${getCurrentModel()} model`;
+
+          transcriptionDiv.appendChild(transcriptionText);
+          transcriptionDiv.appendChild(timingInfo);
         } catch (error) {
           console.error('Failed to transcribe audio:', error);
           const transcriptionDiv = el.querySelector('.transcription');

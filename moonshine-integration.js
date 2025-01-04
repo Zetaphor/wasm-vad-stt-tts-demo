@@ -2,19 +2,28 @@ import Moonshine from './moonshine/moonshine-web.js';
 
 let moonshineInstance = null;
 let isInitialized = false;
+let currentModel = 'tiny';
 
 /**
  * Initialize the Moonshine transcription system
+ * @param {string} modelName - The name of the model to initialize ('tiny' or 'base')
  * @returns {Promise} Resolves when Moonshine is ready
  */
-export async function initializeMoonshine() {
-  if (isInitialized) return;
-
+export async function initializeMoonshine(modelName = 'tiny') {
   try {
-    moonshineInstance = new Moonshine('tiny'); // Using the tiny model by default
+    // If we're switching models, we need to reinitialize
+    if (isInitialized && currentModel !== modelName) {
+      isInitialized = false;
+      moonshineInstance = null;
+    }
+
+    if (isInitialized) return;
+
+    currentModel = modelName;
+    moonshineInstance = new Moonshine(modelName);
     await moonshineInstance.loadModel();
     isInitialized = true;
-    console.log('Moonshine initialized successfully');
+    console.log(`Moonshine initialized successfully with ${modelName} model`);
   } catch (error) {
     console.error('Failed to initialize Moonshine:', error);
     throw error;
@@ -22,9 +31,17 @@ export async function initializeMoonshine() {
 }
 
 /**
+ * Get the current model name
+ * @returns {string} The current model name
+ */
+export function getCurrentModel() {
+  return currentModel;
+}
+
+/**
  * Transcribe audio data using Moonshine
  * @param {Float32Array} audioData - Raw audio data to transcribe
- * @returns {Promise<string>} The transcription result
+ * @returns {Promise<{text: string, duration: number}>} The transcription result and duration in milliseconds
  */
 export async function transcribeAudio(audioData) {
   if (!isInitialized || !moonshineInstance) {
@@ -32,8 +49,15 @@ export async function transcribeAudio(audioData) {
   }
 
   try {
+    const startTime = performance.now();
     const transcription = await moonshineInstance.generate(audioData);
-    return transcription;
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+
+    return {
+      text: transcription,
+      duration: Math.round(duration)
+    };
   } catch (error) {
     console.error('Transcription failed:', error);
     throw error;

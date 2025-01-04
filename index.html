@@ -24,6 +24,13 @@
           <div id="status-indicator" class="status-indicator status-inactive"></div>
           <div id="text-status">Initializing...</div>
         </div>
+        <div class="model-selector">
+          <label for="moonshine-model">Transcription Model:</label>
+          <select id="moonshine-model">
+            <option value="tiny">Moonshine Tiny</option>
+            <option value="base">Moonshine Base</option>
+          </select>
+        </div>
         <button id="toggle_vad_button" onclick="window.toggleVAD()" disabled>
           START VAD
         </button>

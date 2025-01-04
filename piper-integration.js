@@ -6,7 +6,8 @@ const WASM_BASE = "piper/piper_phonemize";
 
 const PATH_MAP = {
   "en_US-hfc_female-medium": "en_US-hfc_female-medium.onnx",
-  "en_US-hfc_male-medium": "en_US-hfc_male-medium.onnx"
+  "en_US-hfc_male-medium": "en_US-hfc_male-medium.onnx",
+  "GLaDOS": "glados.onnx"
 };
 
 function pcm2wav(buffer, numChannels, sampleRate) {
